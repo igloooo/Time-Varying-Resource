@@ -30,6 +30,15 @@ class TwoStateModel:
         self.h = np.clip(meshy - M, 0, None)
         self.h = self.h.reshape((-1,))
 
+        self.maskv = (meshx + meshy) >= (BD-2)
+        self.maskv = self.maskv.astype(float)
+        print(self.maskv)
+        self.maskv = self.maskv.reshape((-1,))
+        self.maskx = (meshx + meshy) >= BD-1
+        self.maskx = self.maskx.astype(float)
+        print(self.maskx)
+        self.maskx = self.maskx.reshape((-1,))
+
     def comp_job_amount(self, mu0, mu1, mu, arr, p0, p1):
         y0 = None
         y1 = None
@@ -43,7 +52,7 @@ class TwoStateModel:
                 # rate leaving state (i, j)
                 Q_mat[i, j, i, j] = -(mu0 * i + mu1 * j + mu * (i+j))
                 if i >= 1:
-                    if j < BD-1:############leak
+                    if j < BD-2:############leak
                         # rate of 0->1 event
                         Q_mat[i-1, j+1, i, j] = mu0 * i
                     else:
@@ -51,7 +60,7 @@ class TwoStateModel:
                     # rate of 0->* event
                     Q_mat[i-1, j, i, j] = mu * i
                 if j >= 1:
-                    if i < BD - 1:
+                    if i < BD - 2:
                         # rate of 1->0 event
                         Q_mat[i+1, j-1, i, j] = mu1 * j
                     else:

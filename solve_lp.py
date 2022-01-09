@@ -9,14 +9,14 @@ from matplotlib import cm
 
 
 my_model = TwoStateModel(
-        M=5,
+        M=10,
         mu0=1,
         mu1 = 2,
-        mu = 0.5,
+        mu = 10,
         arr = 1000,
         p0 = 0.4,
         p1 = 0.6,
-        BD = 25,
+        BD = 20,
         eps = 0.01
     )
 
@@ -35,13 +35,12 @@ Me1 = my_model.minus_e1_mat
 
 m.setObjective(x[1:].sum(), GRB.MINIMIZE)
 
-#m.addConstr(Q @ x + Me0 @ v0 + Me1 @ v1 - (v0+v1) == 0, name='stationary')
+m.addConstr(Q @ x + Me0 @ v0 + Me1 @ v1 - (v0+v1) == 0, name='stationary')
 
-m.addConstr()
 
 h = my_model.h
 eps = my_model.eps
-m.addConstr(h @ x <= eps * x.sum(), name='capacity')
+m.addConstr(h @ x <= eps * x[1:].sum(), name='capacity')
 
 m.addConstr(h @ v0 == 0, name='reasonable0')
 m.addConstr(h @ v1 == 0, name='reasonable1')
@@ -50,6 +49,13 @@ arr0 = my_model.arr0
 arr1 = my_model.arr1
 m.addConstr(v0.sum() == arr0, name='arrival0')
 m.addConstr(v1.sum() == arr1, name='arrival1')
+
+m.addConstrs((v0[i] * my_model.maskv[i] == 0 for i in range(len(my_model.maskv))), name='boundv0')
+m.addConstrs((v1[i] * my_model.maskv[i] == 0 for i in range(len(my_model.maskv))), name='boundv1')
+m.addConstrs((x[i] * my_model.maskx[i] == 0 for i in range(len(my_model.maskx))), name='boundx')
+
+
+
 
 m.optimize()
 
@@ -69,7 +75,7 @@ print(x.X[0])
 
 
 fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-plot = ax.plot_surface(meshx, meshy, z, color='0.75', rstride=1, cstride=1)
+plot = ax.plot_surface(meshx, meshy, v0_val, color='0.75', rstride=1, cstride=1)
 ax.set_xlabel('k0')
 ax.set_ylabel('k1')
 plt.show()
